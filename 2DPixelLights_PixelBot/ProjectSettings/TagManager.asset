@@ -13,8 +13,8 @@ TagManager:
   - UI
   - 
   - 
-  - 
-  - 
+  - Env
+  - Ground
   - 
   - 
   - 
@@ -38,6 +38,12 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: Background
+    uniqueID: 3760291581
+    locked: 0
+  - name: Stars
+    uniqueID: 3607145545
+    locked: 0
   - name: Default
     uniqueID: 0
     locked: 0
