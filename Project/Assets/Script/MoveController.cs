@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.Playables;
 using UnityEngine.UI;
 
 public class MoveController : MonoBehaviour {
@@ -34,7 +33,7 @@ public class MoveController : MonoBehaviour {
     float timeJump;             //跳跃当前的蓄力时间
     public Vector2 boxSize;
     int playerLayerMask;
-    private PlayState state;
+
     public Image dieMaskImage;
     public Vector3 startPoint;
     void Start()
@@ -54,21 +53,20 @@ public class MoveController : MonoBehaviour {
 
         playerLayerMask = LayerMask.GetMask("Player");
         playerLayerMask = ~playerLayerMask;             //获得当前玩家层级的mask值，并使用~运算，让射线忽略玩家层检测
-
     }
 
     void Update() {
-        if (!isAlive) return; //角色死亡无法操作
-
+        if (!isAlive)
+        {
+            return; //  死亡不进行任何操作
+        }
         LRMove();
+        UpdateAnimtorState();
         UDMpve();
         Jump();
         DashFunc();
-
-        //更新状态和动画
-        UpdateAnimtorState();
-        playAnimator.SetInteger("state", (int)state);
-
+        playAnimator.SetBool("IsGround",isGround);
+       // CheckNextMove();
     }
 
     private void OnCollisionStay2D(Collision2D collision)
@@ -87,30 +85,33 @@ public class MoveController : MonoBehaviour {
     /// </summary>
     public void UpdateAnimtorState()
     {
-        if (isGround && isClimb)
+        if (isGround)
         {
-            state = PlayState.Climb;
-            isClimb = false;
+            playAnimator.SetBool("IsJump", false);
+            playAnimator.ResetTrigger("IsJumpTwo");
+            playAnimator.SetBool("IsDown", false);
+            jumpState = false;
+            if (isClimb)
+            {
+                isClimb = false;
+            }
+            isCanDash = true;
         }
-        else if (isGround && Mathf.Abs(moveSpeed.x) > 0)
+        else
         {
-            state = PlayState.Run;
+            if (!jumpState)
+            {
+                playAnimator.SetBool("IsDown", true);
+            }
+            else
+            {
+                playAnimator.SetBool("IsDown", false);
+            }
+            if (isClimb)
+            {
+            }
         }
-        else if (isGround)
-        {
-            state = PlayState.Normal;
-        }
-        else if (jumpState)
-        {
-            state = PlayState.Jump;
-        }
-        else if (moveSpeed.y < 0)
-        {
-            state = PlayState.Fall;
-        }        
-
     }
-
 
     /// <summary>
     /// 左右移动
@@ -212,13 +213,25 @@ public class MoveController : MonoBehaviour {
     public bool CheckIsGround()
     {
         float aryDistance = boxSize.y * 0.5f + 0.1f;
-        RaycastHit2D hit2D = Physics2D.BoxCast(transform.position, boxSize, 0, Vector2.down, aryDistance, playerLayerMask);
-
+        RaycastHit2D hit2D = Physics2D.BoxCast(transform.position, boxSize, 0, Vector2.down,5f, playerLayerMask);
+        Debug.DrawLine(transform.position, transform.position + Vector3.down * aryDistance, Color.red, 6.0f);
         if (hit2D.collider != null)
         {
-            return Vector3.Distance(transform.position, hit2D.point) <= (boxSize.y * 0.5f + distance);
+            float tempDistance = Vector3.Distance(transform.position, hit2D.point);
+            if (tempDistance > (boxSize.y * 0.5f + distance))
+            {
+                //transform.position += new Vector3(0, moveDistance.y, 0);
+                return false;
+            }
+            else
+            {
+                return true;
+            }
         }
-        return false;
+        else
+        {
+            return false;
+        }
     }
 
     void JumpUpdate(float power = 0)

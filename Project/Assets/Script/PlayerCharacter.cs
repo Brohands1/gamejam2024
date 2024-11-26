@@ -21,7 +21,6 @@ public enum PlayDir
 enum PlayState
 {
     Normal,
-	Run,
     Jump,
     Climb,
     Dash,
